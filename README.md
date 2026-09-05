@@ -149,18 +149,8 @@ You can integrate `zetoken-client` using either of the two methods below:
 
 ### 🔹 Method 2: jsDelivr CDN (Instant Cloud-Hosted)
 
-If you prefer to load the library directly without downloading files manually (e.g., for rapid prototyping, CodePen, or cloud demos), you can load it from **jsDelivr CDN**:
+If you prefer to load the library directly without downloading files manually (e.g., for rapid prototyping, CodePen, or cloud demos), you can load it directly from **jsDelivr CDN**:
 
-#### Via NPM on jsDelivr:
-```html
-<!-- CSS from jsDelivr CDN -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/zetoken-client@1.0.0/style.css">
-
-<!-- JS from jsDelivr CDN -->
-<script src="https://cdn.jsdelivr.net/npm/zetoken-client@1.0.0/zetoken-client.js"></script>
-```
-
-#### Via GitHub Repository on jsDelivr:
 ```html
 <!-- Specific Release Tag (Recommended for Production) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.0/style.css">
