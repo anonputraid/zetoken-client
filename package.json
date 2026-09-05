@@ -23,5 +23,13 @@
     "browser-crypto"
   ],
   "author": "Anonputraid",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anonputraid/zetoken-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anonputraid/zetoken-client/issues"
+  },
+  "homepage": "https://github.com/anonputraid/zetoken-client#readme"
 }

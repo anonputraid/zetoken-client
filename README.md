@@ -162,9 +162,13 @@ If you prefer to load the library directly without downloading files manually (e
 
 #### Via GitHub Repository on jsDelivr:
 ```html
-<!-- Format: https://cdn.jsdelivr.net/gh/<username>/<repo>@<version_or_branch>/<path> -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Anonputraid/zetoken@v1.0.0/client/style.css">
-<script src="https://cdn.jsdelivr.net/gh/Anonputraid/zetoken@v1.0.0/client/zetoken-client.js"></script>
+<!-- Specific Release Tag (Recommended for Production) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.0/style.css">
+<script src="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.0/zetoken-client.js"></script>
+
+<!-- Or latest commit from main branch -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@main/style.css">
+<script src="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@main/zetoken-client.js"></script>
 ```
 
 > [!NOTE]
