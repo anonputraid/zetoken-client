@@ -1,0 +1,27 @@
+{
+  "name": "zetoken-client",
+  "version": "1.0.0",
+  "description": "Zero-knowledge authenticated client-side encryption library using Web Crypto API. Interoperable with Python, PHP, and Node.js.",
+  "main": "zetoken-client.js",
+  "browser": "zetoken-client.js",
+  "style": "style.css",
+  "files": [
+    "zetoken-client.js",
+    "style.css",
+    "README.md"
+  ],
+  "keywords": [
+    "zetoken",
+    "zetoken-client",
+    "client-side-encryption",
+    "zero-knowledge",
+    "web-crypto-api",
+    "aes-gcm",
+    "security",
+    "file-encryption",
+    "zetoken-format",
+    "browser-crypto"
+  ],
+  "author": "Anonputraid",
+  "license": "MIT"
+}
