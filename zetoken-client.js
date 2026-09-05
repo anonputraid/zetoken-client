@@ -786,10 +786,10 @@
               </button>
               
               <div id="ztxManualBody" class="ztx-manual-body">
-                <div class="form-group" style="margin-bottom: 0.75rem;">
-                  <textarea id="ztxManualInput" class="form-textarea mono" style="font-size: 0.8rem; height: 110px;" placeholder="ZETOKEN_ACCESS_KEY_ID=...\nZETOKEN_SECRET_KEY=...\nZETOKEN_ITERATIONS=1000"></textarea>
+                <div class="ztx-form-group" style="margin-bottom: 0.75rem;">
+                  <textarea id="ztxManualInput" class="ztx-textarea" style="font-size: 0.8rem; height: 110px;" placeholder="ZETOKEN_ACCESS_KEY_ID=...\nZETOKEN_SECRET_KEY=...\nZETOKEN_ITERATIONS=1000"></textarea>
                 </div>
-                <button id="ztxSaveManualBtn" class="btn btn-primary btn-sm" style="width: 100%;">
+                <button id="ztxSaveManualBtn" class="ztx-btn ztx-btn-primary" style="width: 100%;">
                   Save & Apply Key
                 </button>
               </div>
