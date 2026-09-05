@@ -1,34 +1,66 @@
 # Zetoken Client (Browser / Pure Vanilla JavaScript)
 
-Official client-side implementation of the **Zetoken** cryptographic algorithm built with **Pure Vanilla JavaScript** (zero external runtime dependencies). This library leverages the browser-native **Web Crypto API** for high-speed authenticated encryption, offering 100% interoperability with Zetoken backend implementations in **Python**, **Node.js**, and **PHP**.
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/anonputraid/zetoken-client/releases/tag/v1.0.1)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Dependencies](https://img.shields.io/badge/dependencies-0%20(Pure%20Vanilla)-brightgreen.svg)](#)
+[![Crypto Standard](https://img.shields.io/badge/crypto-Web%20Crypto%20API-orange.svg)](#)
+[![Interoperability](https://img.shields.io/badge/interoperability-Python%20%7C%20PHP%20%7C%20Node.js-purple.svg)](#)
+
+Official client-side implementation of the **Zetoken** cryptographic algorithm built with **Pure Vanilla JavaScript** (zero external runtime dependencies). Designed for **Zero-Knowledge Client-Side Encryption (CSE)**, it leverages the browser-native **Web Crypto API** to encrypt sensitive data and binary files before they leave the browser, ensuring 100% interoperability with Zetoken backends in **Python**, **PHP**, and **Node.js**.
+
+---
+
+## 📑 Table of Contents
+
+- [🛡️ Security Philosophy & Threat Model](#️-security-philosophy--threat-model)
+  - [The `www-data` Server Breach Problem](#1-the-critical-flaw-in-conventional-server-side-encryption)
+  - [The Zero-Knowledge CSE Solution](#2-the-zetoken-client-solution-zero-knowledge-architecture)
+  - [Data Flow Diagram](#data-flow-diagram)
+  - [Security Best Practices](#3-frontend-security-best-practices)
+- [🚀 Key Features](#-key-features)
+- [📦 Installation & CDN Setup](#-installation--cdn-setup)
+  - [Method 1: Direct Download (Self-Hosted)](#-method-1-direct-download-self-hosted--recommended)
+  - [Method 2: jsDelivr CDN (`v1.0.1`)](#-method-2-jsdelivr-cdn-instant-cloud-hosted)
+- [⚡ Quickstart & Usage](#-quickstart--usage)
+- [🔑 Key Configuration File Format](#-key-configuration-file-format)
+- [📚 Complete API Reference](#-complete-api-reference)
+  - [Core Encryption & Decryption](#core-encryption--decryption)
+  - [3-Layer Entity Sign](#3-layer-entity-sign)
+  - [File Vault (`.zetoken` Format)](#file-vault-zetoken-binary-encryption)
+  - [Key & Onboarding Modal Management](#key--onboarding-modal-management)
+- [🗄️ `.zetoken` Container Specification](#️-specification-of-the-zetoken-file-container)
+- [🔄 Cross-Habitat Matrix](#-cross-habitat-interoperability-matrix)
+- [🖥️ Interactive Demo Dashboard](#️-interactive-demo-dashboard)
+- [📄 License](#-license)
 
 ---
 
 ## 🛡️ Security Philosophy & Threat Model
 
-### 1. The Critical Flaw in Conventional Paradigms (Server-Side Encryption)
+### 1. The Critical Flaw in Conventional Server-Side Encryption
 
-In traditional web applications, sensitive user data is submitted from the browser as plaintext (or protected only by SSL/TLS in transit) and encrypted at the server level using secret keys stored in the server's `.env` configuration.
+In traditional web applications, confidential data is sent from the user's browser to the server as plaintext (protected only by SSL/TLS in transit) and encrypted at the server using secret keys stored in the server's `.env` configuration.
 
-**Catastrophic Compromise Scenario:**
-If an attacker discovers a common web vulnerability (e.g., Local File Inclusion, Remote Code Execution, arbitrary file upload, or SQL Injection):
-1. The attacker gains shell access with `www-data` privileges (the standard web server process user for Nginx/Apache).
-2. Under `www-data`, the attacker possesses read access to the **server's `.env` file** and database connection credentials.
-3. The attacker dumps the entire database table and decrypts all records using the leaked `.env` keys.
-4. **Outcome:** A total data breach occurs. Every user record is exposed in plain text.
+**The Catastrophic Breach Scenario:**
+When an application vulnerability (e.g., Local File Inclusion, Remote Code Execution, or SQL Injection) occurs:
+1. The attacker gains command execution under `www-data` (the default web server user).
+2. With `www-data` privileges, the attacker reads the server's **`.env` file** and database credentials.
+3. The attacker dumps the database tables and decrypts all records using the leaked `.env` keys.
+4. **Result:** Total data breach. Every confidential user record is compromised in plain text.
 
 ---
 
-### 2. The Zetoken Client Solution: Zero-Knowledge Client-Side Encryption (CSE)
+### 2. The Zetoken Client Solution: Zero-Knowledge Architecture
 
-Zetoken Client eliminates this single point of failure by enforcing a **Zero-Knowledge Data-at-Rest** model:
+Zetoken Client eliminates this single point of failure by enforcing client-side encryption **before** transmission:
 
+#### Data Flow Diagram:
 ```text
 [ USER BROWSER ]                                        [ SERVER / DATABASE ]
        │                                                         │
- 1. User inputs confidential data                                │
+ 1. User inputs sensitive data                                   │
        │                                                         │
- 2. Browser encrypts locally via                                 │
+ 2. Encrypt locally in browser via                               │
     zetoken-client.js (Key in localStorage)                      │
        │                                                         │
  3. Send numeric token (Ciphertext) ──── HTTP POST ────────────> │
@@ -37,74 +69,58 @@ Zetoken Client eliminates this single point of failure by enforcing a **Zero-Kno
                                                                  │
  6. Receive numeric token           <─── HTTP GET ────────────── 5. Query stored token
        │
- 7. Browser decrypts locally via
+ 7. Decrypt locally in browser via
     key held in localStorage
        │
  8. Plaintext displayed to user
 ```
 
-**Key Security Advantages During a Server Breach:**
-- **Keys Never Touch the Server:** Cryptographic keys reside exclusively on the client side (uploaded via the onboarding modal and preserved in the user's browser `localStorage`), never written to `.env` and never saved in the database.
-- **Server Only Sees Ciphertext:** The backend and database only ever process randomized Zetoken numeric streams (`226243233014...`).
-- **Immune to `www-data` Server Compromises:** Even if an attacker gains root or `www-data` access, reads `.env`, and exfiltrates the entire database, they **CANNOT** decrypt the data because the AES-128-GCM keys do not exist on the server.
-- **Zero Liability for Service Providers:** The hosting provider does not store raw unencrypted personally identifiable information (PII), protecting business owners from negligence claims in data breaches.
+**Security Guarantees:**
+- **Keys Never Leave the Client:** Cryptographic keys reside exclusively on the user's device (uploaded or generated in the onboarding modal and stored in browser `localStorage`), never written to server `.env` files or databases.
+- **Immune to Server Compromises:** Even if an attacker compromises the server with `www-data` or root access, they obtain only meaningless numeric ciphertext streams (`226243233014...`). The data cannot be decrypted without the client-side keys.
+- **Zero Legal Liability:** Service providers never store unencrypted Personally Identifiable Information (PII) or financial data at rest.
+- **"Your Keys, Your Data":** No backdoors and no recovery keys on the server. If a user loses their `.key` file, the encrypted data cannot be decrypted by anyone.
 
 ---
 
-### 3. "Your Keys, Your Data" Principle & Boundaries of Responsibility
+### 3. Frontend Security Best Practices
 
-This strict separation of duties places complete ownership and control in the hands of the end user:
-- **Lost Key = Irretrievable Data:** Because the server possesses no backdoor and no master recovery key, losing a `.key` file means the encrypted data in the database can never be recovered by anyone.
-- **Key Hygiene:** Users are responsible for preserving their `.key` files securely (e.g., encrypted flash drives, offline storage, or password managers).
-
----
-
-### 4. Frontend Security Best Practices
-
-Because the active key resides in browser memory and `localStorage`, the primary threat surface shifts from the server to the client browser (specifically Cross-Site Scripting / XSS). To ensure maximum security:
-1. **Enforce a Strict Content Security Policy (CSP):** Disallow execution of untrusted third-party scripts to prevent unauthorized scripts from accessing `localStorage`.
-2. **Sanitize All HTML Inputs:** Prevent XSS injection vectors.
-3. **Provide Key Reset for Shared Terminals:** For public or shared office workstations, always provide an explicit **"Reset / Clear Key"** option to purge keys from `localStorage` upon logout.
+Because cryptographic operations occur inside the browser:
+1. **Strict Content Security Policy (CSP):** Disallow unauthorized third-party scripts to safeguard `localStorage`.
+2. **Sanitize Inputs:** Prevent Cross-Site Scripting (XSS).
+3. **Key Purging on Shared Devices:** Always provide a **"Reset / Clear Key"** option on shared terminals to purge keys from `localStorage` upon logout.
 
 ---
 
 ## 🚀 Key Features
 
-1. **Pure Vanilla JavaScript (Zero Dependencies):** No bundlers (Webpack, Vite) or runtime dependencies required. Runs directly in any modern browser via a simple `<script>` tag.
-2. **W3C Standard Cryptography (Web Crypto API):**
-   - **KDF:** PBKDF2 with `SHA-512` digest (128-bit derived symmetric key).
-   - **Cipher:** `AES-128-GCM` with a cryptographically secure 12-byte CSPRNG IV per encryption.
-   - **Auth Tag:** 16-byte GCM authentication tag preventing any tampering or data manipulation.
-   - **Serialization:** 3-digit zero-padded decimal string stream (`000` to `255`), URL-safe, WebSocket-safe, and free of special characters or Base64 padding issues.
-3. **Multi-Line Key Parser (`key=value`):**
-   - Supports standard `ZETOKEN_*` environment files as well as custom multi-line key-value configurations.
-   - Resiliently ignores comments (`#`, `//`, `;`) and empty lines.
-   - Auto-saves and restores configuration from browser `localStorage`.
-4. **Interactive Fullscreen Onboarding Modal:**
-   - Automatically prompts the user on startup if no active key exists in `localStorage`.
-   - **Upload:** Drag-and-drop or file picker for `.key`, `.env`, or `.txt` files.
-   - **1-Click Generator:** Generates a cryptographically secure key file and automatically triggers an immediate local download while storing it in the browser.
-   - **Manual Paste:** Instant text input for direct key configuration.
-5. **Time-Bound Tokens (TTL):** Built-in token expiration with configurable clock-skew leeway (default: 60s).
-6. **3-Layer Entity Sign & Verification:** Mathematically binds tokens to a specific User ID, Device ID, or Invoice ID (`masterKey::entityId`).
-7. **100% Cross-Habitat Interoperability:** Tokens encrypted in the browser can be decrypted in **Python**, **PHP**, and **Node.js**, and vice versa.
-8. **Document & Binary File Vault (`.zetoken` Format):** Encrypts files (PDF invoices, receipt photos, spreadsheets) into `.zetoken` encrypted container files that can be decrypted back to their exact original bytes, MIME type, and filename.
+- **Pure Vanilla JavaScript:** Zero runtime dependencies. No npm build steps, Webpack, or Vite required.
+- **W3C Standard Cryptography (Web Crypto API):**
+  - **Cipher:** `AES-128-GCM` with a cryptographically secure 12-byte CSPRNG IV generated per encryption.
+  - **KDF:** PBKDF2 with `SHA-512` digest (128-bit derived symmetric key).
+  - **Auth Tag:** 16-byte GCM authentication tag preventing any payload tampering.
+  - **Numeric Stream:** 3-digit zero-padded decimal stream (`000` to `255`), URL-safe and WebSocket-safe without Base64 padding anomalies.
+- **Multi-Line Key Parser (`key=value`):** Parses `.key`, `.env`, and `.txt` files; ignores comments and derives keys deterministically for custom key names.
+- **Fullscreen Onboarding Modal:** Built-in UI for uploading key files, 1-click generation, and manual key entry.
+- **Scoped Component Styles:** `style.css` is strictly scoped under `.ztx-*` to prevent any CSS pollution or background mutation on host websites.
+- **Time-Bound Tokens (TTL):** Built-in token expiration with clock-skew leeway (default: 60s).
+- **3-Layer Entity Sign:** Mathematically binds tokens to a specific entity ID (`masterKey::entityId`).
+- **Binary File Vault (`.zetoken`):** Encrypts documents, PDFs, and images into `.zetoken` containers and restores them bit-by-bit.
+- **100% Interoperability:** Compatible bidirectionally with Zetoken implementations in **Python**, **PHP**, and **Node.js**.
 
 ---
 
-## 📦 Installation & Usage Guides
+## 📦 Installation & CDN Setup
 
-You can integrate `zetoken-client` using either of the two methods below:
-
-### 🔹 Method 1: Direct Download (Self-Hosted / Offline Ready) — *Recommended*
+### 🔹 Method 1: Direct Download (Self-Hosted) — *Recommended*
 
 > [!TIP]
-> **Why is this the best choice?** For security and financial applications, serving JS and CSS files from your own domain guarantees 100% autonomy, works seamlessly in offline or air-gapped environments, and completely eliminates third-party supply-chain risks.
+> **Why Self-Hosted?** For financial and privacy-critical applications, serving files from your own domain ensures 100% autonomy, enables offline/air-gapped operation, and eliminates third-party CDN supply-chain risks.
 
-1. Download the 2 core files from the `client/` folder:
-   - `zetoken-client.js` (Web Crypto logic, Onboarding Modal, File Vault)
-   - `style.css` (Glassmorphism dark theme UI styles)
-2. Place them into your project's frontend assets directory:
+1. Download the two core files:
+   - `zetoken-client.js` (Cryptographic Engine & Modal)
+   - `style.css` (Scoped Glassmorphism Modal Styles)
+2. Place them in your project structure:
    ```text
    my-web-app/
    ├── assets/
@@ -114,101 +130,90 @@ You can integrate `zetoken-client` using either of the two methods below:
    │       └── zetoken-client.js   <-- from zetoken-client.js
    └── index.html
    ```
-3. Include them in your HTML document:
+3. Import them in your HTML:
    ```html
-   <!DOCTYPE html>
-   <html lang="en">
-   <head>
-     <meta charset="UTF-8">
-     <title>My Zero-Knowledge Web App</title>
-     <!-- 1. Local CSS -->
-     <link rel="stylesheet" href="./assets/css/zetoken-style.css">
-   </head>
-   <body>
-
-     <!-- 2. Local Library Script -->
-     <script src="./assets/js/zetoken-client.js"></script>
-     <script>
-       // Initialize Zetoken Client
-       const ztx = new ZetokenClient({
-         storageKey: 'zetoken_active_config',
-         autoShowModal: true // Automatically opens modal if no key is loaded
-       });
-
-       async function saveNote(plaintext) {
-         // Encrypt locally in browser before sending to backend database
-         const ciphertextToken = await ztx.encode(plaintext);
-         console.log("Ciphertext ready to send:", ciphertextToken);
-       }
-     </script>
-   </body>
-   </html>
+   <link rel="stylesheet" href="./assets/css/zetoken-style.css">
+   <script src="./assets/js/zetoken-client.js"></script>
    ```
 
 ---
 
 ### 🔹 Method 2: jsDelivr CDN (Instant Cloud-Hosted)
 
-If you prefer to load the library directly without downloading files manually (e.g., for rapid prototyping, CodePen, or cloud demos), you can load it directly from **jsDelivr CDN**:
+Load the library directly via global CDN using release tag **`v1.0.1`**:
 
 ```html
-<!-- Specific Release Tag (Recommended for Production) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.0/style.css">
-<script src="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.0/zetoken-client.js"></script>
+<!-- Tagged Release v1.0.1 (Production Recommended) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.1/style.css">
+<script src="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.1/zetoken-client.js"></script>
 
 <!-- Or latest commit from main branch -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@main/style.css">
 <script src="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@main/zetoken-client.js"></script>
+
+<!-- Auto-Minified via jsDelivr CDN -->
+<script src="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.1/zetoken-client.min.js"></script>
 ```
 
 > [!NOTE]
-> **CDN Security Best Practice:** When loading cryptographic libraries from a CDN in production environments, always include the `integrity="sha384-..."` (Subresource Integrity / SRI) attribute to verify that the fetched script has not been modified in transit.
+> **Style Isolation Guarantee:** `style.css` is strictly scoped under `.ztx-*`. It will **never** alter your page's `<body>`, `<button>`, fonts, or backgrounds.
 
 ---
 
-### Full Application Flow Example
+## ⚡ Quickstart & Usage
 
-```javascript
-// 1. Initialize client
-const ztx = new ZetokenClient({
-  storageKey: 'zetoken_active_config',
-  autoShowModal: true
-});
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Zero-Knowledge App</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.1/style.css">
+</head>
+<body>
 
-// 2. Encrypt & Save Data (Client-Side Encryption)
-async function saveSecretRecord(plaintextRecord) {
-  // Data is encrypted in user's browser memory
-  const numericToken = await ztx.encode(plaintextRecord);
+  <h1>My Confidential App</h1>
+  <button onclick="saveSecretData()">Encrypt & Save</button>
 
-  // Send ciphertext to server (server and DB admin cannot read the content)
-  await fetch('/api/records', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ payload: numericToken })
-  });
-}
+  <script src="https://cdn.jsdelivr.net/gh/anonputraid/zetoken-client@v1.0.1/zetoken-client.js"></script>
+  <script>
+    // 1. Initialize client
+    const ztx = new ZetokenClient({
+      storageKey: 'my_app_keys',
+      autoShowModal: true // Prompts modal if no key is found in localStorage
+    });
 
-// 3. Retrieve & Decrypt Data (Client-Side Decryption)
-async function readSecretRecord(recordId) {
-  const response = await fetch(`/api/records/${recordId}`);
-  const data = await response.json();
+    // 2. Encrypt sensitive data locally in the browser
+    async function saveSecretData() {
+      const plaintext = "Monthly Revenue: $125,000 | Profit: $42,000";
+      
+      const token = await ztx.encode(plaintext);
+      console.log("Numeric Ciphertext ready for server:", token);
 
-  // Decrypt token locally in browser memory
-  const originalPlaintext = await ztx.decode(data.payload);
-  return originalPlaintext;
-}
+      // Send to server (server only sees ciphertext)
+      // await fetch('/api/finance', { method: 'POST', body: JSON.stringify({ token }) });
+    }
+
+    // 3. Decrypt data received from server
+    async function readSecretData(tokenFromServer) {
+      const decrypted = await ztx.decode(tokenFromServer);
+      console.log("Decrypted Plaintext:", decrypted);
+    }
+  </script>
+</body>
+</html>
 ```
 
 ---
 
-## 🔑 Key Configuration File Format (`key=value`)
+## 🔑 Key Configuration File Format
 
-Key files can use `.key`, `.env`, or `.txt` extensions with multi-line key-value pairs:
+Key files support `.key`, `.env`, or `.txt` formats with multi-line `key=value` pairs:
 
 ```env
 # ==============================================================================
 # Zetoken Cryptographic Configuration File
-# Keep this file secure and private. Never commit to public repositories.
+# Keep this file private. Never commit to public source control.
 # ==============================================================================
 
 ZETOKEN_ACCESS_KEY_ID="8347293847293847293847293847293847293847293847293"
@@ -216,11 +221,11 @@ ZETOKEN_SECRET_KEY="ZET/12345678/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno="
 ZETOKEN_ITERATIONS="1000"
 ```
 
-> **Parser Flexibility:** If you upload a custom configuration without `ZETOKEN_*` variable names, the parser automatically combines the available key-value pairs and derives a deterministic, collision-resistant key pair.
+> **Flexible Parser:** If custom key names are provided, the parser automatically combines the pairs and computes a deterministic, collision-resistant key pair.
 
 ---
 
-## 📚 API Reference
+## 📚 Complete API Reference
 
 ### Initialization
 
@@ -230,148 +235,134 @@ const ztx = new ZetokenClient(options);
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `storageKey` | `string` | `'zetoken_active_config'` | Key name in browser `localStorage` |
-| `autoShowModal` | `boolean` | `true` | Automatically opens modal if no key exists |
-| `throwOnError` | `boolean` | `false` | Throws errors instead of returning `false` |
+| `storageKey` | `string` | `'zetoken_active_config'` | Key name used in browser `localStorage` |
+| `autoShowModal` | `boolean` | `true` | Automatically opens modal if no key is loaded |
+| `throwOnError` | `boolean` | `false` | Throws exceptions instead of returning `false` |
 
 ---
 
-### `encode(text, options)` / `encrypt(text, options)`
+### Core Encryption & Decryption
 
-Encrypts a plaintext string into a Zetoken numeric token.
+#### `encode(text, options)` / `encrypt(text, options)`
+Encrypts plaintext string into a Zetoken numeric stream.
 
 ```javascript
-const token = await ztx.encode("Confidential Financial Record", {
-  ttl: 300 // (Optional) Expires in 300 seconds (5 minutes)
+const token = await ztx.encode("Confidential Information", {
+  ttl: 300 // (Optional) Expire after 300 seconds (5 minutes)
 });
 ```
-
 - **Returns:** `Promise<string|false>`
-- **Output:** Decimal string (length divisible by 3, minimum 84 characters).
+- **Output Format:** 3-digit zero-padded decimal string (divisible by 3, min. 84 chars).
 
----
-
-### `decode(cipherText, options)` / `decrypt(cipherText, options)`
-
+#### `decode(cipherText, options)` / `decrypt(cipherText, options)`
 Decrypts a Zetoken numeric token back to plaintext.
 
 ```javascript
-const plaintext = await ztx.decode(token, {
-  leeway: 60 // (Optional) Clock skew tolerance in seconds (default: 60)
+const text = await ztx.decode(token, {
+  leeway: 60 // (Optional) Clock-skew tolerance in seconds (default: 60)
 });
-
-if (plaintext === false) {
-  console.log("Token is invalid, tampered with, or expired!");
+if (text === false) {
+  console.error("Decryption failed: Token is invalid, expired, or tampered with.");
 }
 ```
-
 - **Returns:** `Promise<string|false>`
 
 ---
 
-### `sign(text, entityId, options)`
+### 3-Layer Entity Sign
 
-Binds a token cryptographically to a specific entity (e.g., `USER-1002`). The token cannot be decrypted by any other entity even with the same master access key.
+#### `sign(text, entityId, options)`
+Cryptographically binds a token exclusively to a specific entity ID (`masterKey::entityId`).
 
 ```javascript
-const boundToken = await ztx.sign("Transaction Ticket", "USER-1002", {
+const boundToken = await ztx.sign("Transaction Invoice #9021", "USER-1002", {
   ttl: 600
 });
 ```
 
----
-
-### `verifySign(token, entityId, options)`
-
-Decrypts and verifies an entity-bound token.
+#### `verifySign(token, entityId, options)`
+Verifies and unlocks an entity-bound token.
 
 ```javascript
 const verified = await ztx.verifySign(boundToken, "USER-1002");
 if (verified !== false) {
-  console.log("Valid token for User-1002:", verified);
+  console.log("Verified Content:", verified);
 } else {
-  console.log("Access Denied: Entity mismatch or invalid token.");
+  console.warn("Access Denied: Entity mismatch or tampered token.");
 }
 ```
 
 ---
 
-### `encryptFile(file, options)`
+### File Vault (`.zetoken` Binary Encryption)
 
-Encrypts binary files (Images, PDFs, Spreadsheets, Docs) into `.zetoken` format.
+#### `encryptFile(file, options)`
+Encrypts binary files (Images, PDFs, Spreadsheets, Documents) into a secure `.zetoken` container file.
 
 ```javascript
-// file from <input type="file"> or dropzone event
-const fileInput = document.querySelector('#myFileInput');
+const fileInput = document.querySelector('#fileUpload');
 const file = fileInput.files[0];
 
 const result = await ztx.encryptFile(file, {
-  download: true // (Default: true) Automatically triggers browser download
+  download: true // (Default: true) Auto-downloads 'filename.ext.zetoken'
 });
 
-console.log("Output filename:", result.filename); // e.g., "financial_report.pdf.zetoken"
-console.log("Container size:", result.size);
+console.log("Container filename:", result.filename);
+console.log("Encrypted size:", result.size);
 ```
-
 - **Returns:** `Promise<Object|false>`:
-  - `filename`: Encrypted filename with `.zetoken` extension
-  - `originalName`: Original file name
-  - `mimeType`: Original MIME type
-  - `blob`: Binary `Blob` of `.zetoken` container
-  - `json`: Raw JSON container string
-  - `size`: Byte size of container
+  - `filename`: Generated `.zetoken` filename.
+  - `originalName`: Original file name.
+  - `mimeType`: Original MIME type.
+  - `blob`: Binary `Blob` of `.zetoken` container.
+  - `json`: Container JSON string.
+  - `size`: Byte size of container.
 
----
-
-### `decryptFile(fileOrString, options)`
-
-Decrypts a `.zetoken` file back into its original file format (name, MIME type, and binary content 100% intact).
+#### `decryptFile(fileOrString, options)`
+Decrypts a `.zetoken` file back into its exact original binary format, filename, and MIME type.
 
 ```javascript
-// fileZetoken is a .zetoken File or Blob uploaded by the user
-const restored = await ztx.decryptFile(fileZetoken, {
-  download: true // (Default: true) Automatically downloads restored file
+const restored = await ztx.decryptFile(uploadedZetokenFile, {
+  download: true // (Default: true) Auto-downloads restored original file
 });
 
-console.log("Restored name:", restored.originalName); // e.g., "financial_report.pdf"
-console.log("MIME type:", restored.mimeType);         // e.g., "application/pdf"
-console.log("Restored size:", restored.size);
+console.log("Restored name:", restored.originalName);
+console.log("Restored MIME:", restored.mimeType);
 
 // Live preview in browser (for images/receipts):
 if (restored.mimeType.startsWith('image/')) {
-  document.querySelector('#previewImg').src = restored.dataUrl;
+  document.querySelector('#previewImage').src = restored.dataUrl;
 }
 ```
-
 - **Returns:** `Promise<Object|false>`:
-  - `originalName`: Restored original filename
-  - `mimeType`: Restored original MIME type
-  - `size`: Restored byte size
-  - `blob`: Restored `Blob` object
-  - `dataUrl`: Base64 DataURL (ready for `<img>` or `<iframe>` preview)
+  - `originalName`: Restored original file name.
+  - `mimeType`: Restored MIME type.
+  - `size`: Restored byte size.
+  - `blob`: Restored `Blob` object.
+  - `dataUrl`: Base64 DataURL (ready for `<img>` or `<iframe>` preview).
 
 ---
 
-### Key & Modal Management Methods
+### Key & Onboarding Modal Management
 
 ```javascript
-// Open onboarding / key management modal
+// Open onboarding modal
 ztx.showKeyModal();
 
 // Close modal
 ztx.hideKeyModal();
 
 // Check if an active key is loaded
-console.log(ztx.hasKey()); // true / false
+const active = ztx.hasKey(); // true / false
 
 // Retrieve sanitized active key metadata
 const info = ztx.getActiveKeyInfo();
-console.log(info.keyIdPreview); // e.g., "8347293847...7293"
+console.log(info.keyIdPreview); // e.g. "8347293847...7293"
 
-// Download current key configuration as a file
+// Download current key file
 ztx.downloadKeyFile('my-zetoken.key');
 
-// Purge keys from browser localStorage
+// Purge keys from localStorage
 ztx.clearConfig();
 ```
 
@@ -379,7 +370,7 @@ ztx.clearConfig();
 
 ## 🗄️ Specification of the `.zetoken` File Container
 
-The `.zetoken` file is a structured, encrypted envelope containing:
+The `.zetoken` file container is a structured JSON envelope:
 
 ```json
 {
@@ -391,14 +382,14 @@ The `.zetoken` file is a structured, encrypted envelope containing:
 }
 ```
 
-Inside the encrypted `payload` (AES-128-GCM):
+The decrypted `payload` contains the complete original file structure:
 ```json
 {
-  "name": "receipt_august_2026.png",
-  "type": "image/png",
-  "size": 245820,
+  "name": "financial_statement.pdf",
+  "type": "application/pdf",
+  "size": 184520,
   "lastModified": 1788619200000,
-  "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+  "data": "data:application/pdf;base64,JVBERi0xLjQKJ..."
 }
 ```
 
@@ -406,28 +397,27 @@ Inside the encrypted `payload` (AES-128-GCM):
 
 ## 🔄 Cross-Habitat Interoperability Matrix
 
-Zetoken Client is fully tested and verified against all backend implementations:
+Zetoken Client is fully audited and tested bidirectionally across all habitats:
 
 | Operation | Client (Browser) | Python Backend | PHP Backend | Node.js Backend |
-|---|:---:|:---:|:---:|:---:|
+|:---|:---:|:---:|:---:|:---:|
 | **Client Encode** | ✅ Self | ✅ Decrypts | ✅ Decrypts | ✅ Decrypts |
 | **Python Encode** | ✅ Decrypts | ✅ Self | ✅ Decrypts | ✅ Decrypts |
 | **PHP Encode** | ✅ Decrypts | ✅ Decrypts | ✅ Self | ✅ Decrypts |
 | **Node.js Encode** | ✅ Decrypts | ✅ Decrypts | ✅ Decrypts | ✅ Self |
 | **3-Layer Entity Sign** | ✅ Verified | ✅ Verified | ✅ Verified | ✅ Verified |
-| **File Vault (.zetoken)**| ✅ Bit-for-Bit | N/A (JSON Envelope) | N/A (JSON Envelope) | N/A (JSON Envelope) |
+| **File Vault (`.zetoken`)** | ✅ Bit-for-Bit | N/A (JSON Envelope) | N/A (JSON Envelope) | N/A (JSON Envelope) |
 
 ---
 
-## 🖥️ Running the Interactive Demo Dashboard
+## 🖥️ Interactive Demo Dashboard
 
-Open `client/index.html` directly in any web browser to explore:
-- Onboarding modal workflow (Key Upload & 1-Click Generator).
-- Real-time encryption with visual binary component breakdown (IV, Tag, Ciphertext).
-- Decryption with real-time TTL validity and clock-skew checking.
-- 3-Layer Entity Sign & Verify simulation with simulated attacker rejection.
-- Live cross-test decryption verifying tokens generated by **Python**, **Node.js**, and **PHP**.
-- The **File Vault** for encrypting and restoring binary files into `.zetoken` format.
+Explore all features visually by opening `client/index.html` in your browser:
+- **Tab 1: Enkripsi (Encode):** Live encryption with component breakdown (IV, Tag, Ciphertext).
+- **Tab 2: Dekripsi (Decode):** Decryption with real-time TTL clock-skew verification.
+- **Tab 3: Entity Sign:** 3-Layer sign/verify testing with simulated attacker rejection.
+- **Tab 4: Uji Silang Backend:** Live decryption buttons for tokens generated by **Python**, **Node.js**, and **PHP**.
+- **Tab 5: File Vault (`.zetoken`):** Drag-and-drop encryption & restoration with image previews.
 
 ---
 

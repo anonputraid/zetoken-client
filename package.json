@@ -1,6 +1,6 @@
 {
   "name": "zetoken-client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zero-knowledge authenticated client-side encryption library using Web Crypto API. Interoperable with Python, PHP, and Node.js.",
   "main": "zetoken-client.js",
   "browser": "zetoken-client.js",
